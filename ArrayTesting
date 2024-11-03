@@ -1,0 +1,36 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ArrayTesting : MonoBehaviour
+{
+    [Header("Array con Strings")]
+    public string[] dogNames;
+    public string[] characterNames = { "Mario", "Sonic", "Luigi", "Pikachu" };
+    [Header("Array con Numeros")]
+    public int[] myIntArray;
+    public float[] myFloatArray;
+    [Header("Array con Boleanas")]
+    public bool[] myBoolArray = new bool[5];
+
+    [Header("Array Control")]
+    public int arrayListNumber = 4;
+
+    [Header("Array de Componentes")]
+    public int destroyObjectNumber = 1;
+    public GameObject[] myGameObjectArray;
+
+    private void Start()
+    {
+        Destroy(myGameObjectArray[destroyObjectNumber]);
+    }
+
+    private void TestingArrayValue()
+    {
+        Debug.Log(dogNames.Length);
+        if(arrayListNumber < dogNames.Length && arrayListNumber >= 0)
+        {
+            Debug.Log(dogNames[arrayListNumber]);
+        }
+    }
+}
