@@ -1,0 +1,40 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerStats : MonoBehaviour
+{
+    public float actualPlayerHealth;
+    public float totalPlayerHealth;
+
+    private Vector3 startPosition;
+
+    public int playerCoins;
+
+    private void Start()
+    {
+        actualPlayerHealth = totalPlayerHealth;
+        startPosition = transform.position;
+    }
+
+    public void DoDamageToPlayer(float damage)
+    {
+        actualPlayerHealth -= damage;
+
+        if (actualPlayerHealth <= 0) 
+        {
+            transform.position = startPosition;
+            actualPlayerHealth = totalPlayerHealth;
+        }
+    }
+
+    public void RestoreHealthToPlayer(float restoreHealth)
+    {
+        actualPlayerHealth += restoreHealth;
+    }
+
+    public void AddCoins(int coins)
+    {
+        playerCoins += coins;// Suma el valor que pasemos por parámetro
+    }
+}
