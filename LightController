@@ -1,0 +1,53 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class LightController : MonoBehaviour
+{
+    public Light[] pointLights;
+
+    [Header("Lights Settings")]
+    public Color[] lightColors;
+    private int switchCount;
+
+    [Header("Timer Settings")]
+    public float timerMaxTime;
+    private float timeCount;
+    private bool lightsSwitcher;
+
+    private void Update()
+    {
+        LightSwitcher();
+        LightsControl();
+    }
+
+    private void LightSwitcher()
+    {
+        timeCount += Time.deltaTime;
+
+        if (timeCount >= timerMaxTime)
+        {
+            lightsSwitcher = !lightsSwitcher;
+
+            if (lightsSwitcher) switchCount++;
+
+            timeCount = 0;
+        }
+    }
+
+    private void LightsControl()
+    {
+        for (int i = 0; i < pointLights.Length; i++)
+        {
+            pointLights[i].enabled = lightsSwitcher;
+
+            if (lightsSwitcher)
+            {
+                int loopUpdate = i + switchCount;
+
+                int colorListLength = lightColors.Length;
+                pointLights[i].color = lightColors[loopUpdate % colorListLength];
+            }
+        }
+    }
+}
