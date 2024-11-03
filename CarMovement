@@ -1,0 +1,48 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CarMovement : MonoBehaviour
+{
+    public Vector3 newPosition;
+
+    [Header("Movement Settings")]
+    public Transform pointA;
+    public Transform pointB;
+    public float interpolationValue;
+
+    [Header("Distance and direction Settings")]
+    public Transform target;
+    public float targetDistance;
+
+    [Header("Car Settings")]
+    public float carSpeed;
+
+    [Header("Rotation Settings")]
+    public float rotationSpeed;
+
+    private void Update()
+    {
+        InputMovementCameraView();
+    }
+
+    private void InputMovementCameraView()
+    {
+        float xInput = Input.GetAxisRaw("Horizontal");
+        float zInput = Input.GetAxisRaw("Vertical");
+
+        Transform cam = Camera.main.transform;
+
+        Vector3 direction = cam.forward * zInput + cam.right * xInput;
+        direction.y = 0;
+        direction.Normalize();
+
+        transform.position += direction * carSpeed * Time.deltaTime;
+
+        if (direction.magnitude != 0) //Evita que rote cuando la dirección es 0
+        {
+            Quaternion lookDirection = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookDirection, rotationSpeed * Time.deltaTime);
+        }
+    }
+}
