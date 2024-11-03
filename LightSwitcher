@@ -1,0 +1,39 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class LightSwitcher : MonoBehaviour
+{
+    public bool lightSwitcher;
+
+    public Light lampLight; 
+
+    public float time;
+
+    private void Update()
+    {
+        time += Time.deltaTime; 
+
+        VariableTime();
+
+        lampLight.enabled = lightSwitcher;
+    }
+
+    private void VariableTime()
+    {
+        if (time > 3)
+        {
+            time = 0;
+
+            if (lightSwitcher == true)
+            {
+                lightSwitcher = false;
+            }
+
+            else
+            {
+                lightSwitcher = true;
+            }
+        }
+     }
+}
