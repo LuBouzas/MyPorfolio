@@ -1,0 +1,39 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class UIMainMenu : MonoBehaviour
+{
+        public GameObject titleScreen;
+        public GameObject creditsMenu;
+        public GameObject mainMenu;
+
+
+        private void Start()
+        {
+            titleScreen.SetActive(true);
+            creditsMenu.SetActive(false);
+            mainMenu.SetActive(true);
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (creditsMenu.activeSelf == true)
+                {
+                    creditsMenu.SetActive(false);
+                }
+            }
+        }
+
+        public void CloseTitleScreen()
+        {
+            titleScreen.SetActive(false);
+        }
+
+        public void SetActiveCreditsMenu(bool newCreditsMenuActive)
+        {
+            creditsMenu.SetActive(newCreditsMenuActive); //Al configurar el botón, le pasaremos el valor
+        }
+}
