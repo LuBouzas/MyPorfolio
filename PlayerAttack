@@ -1,0 +1,47 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerAttack : MonoBehaviour
+{
+    public PlayerMovement movement;
+    public Animator animator;
+
+    [Header("Attack Settings")]
+    public float playerDamage;
+    public bool isAttacking;
+    private bool attackInput;
+
+    private void Update()
+    {
+        SetAttackInputs();
+        HandlePlayerAttack();
+    }
+
+    private void SetAttackInputs()
+    {
+        attackInput = Input.GetKeyDown(KeyCode.L);
+    }
+
+    private void HandlePlayerAttack()
+    {
+        if (attackInput && !isAttacking && movement.isGrounded)
+        {
+            isAttacking = true;
+            animator.SetTrigger("Attack");
+        }
+        if(animator.GetCurrentAnimatorStateInfo(0).IsTag("Idle"))
+        {
+            isAttacking = false;
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.tag == "Enemy") //Añadir tag al enemy
+        {
+            EnemyStats stats = collision.GetComponent<EnemyStats>();
+            stats.DoDamageToEnemy(playerDamage);
+        }
+    }
+}
