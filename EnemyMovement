@@ -1,0 +1,208 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnemyMovement : MonoBehaviour
+{
+    public Rigidbody2D rb;
+    public Transform sprite;
+    public Animator animator;
+
+    [Header("Horizontal Movement Settings")]
+    private bool stopHorizontalMovement;
+    public float movementAcceleration = 40;
+    public float movementDeceleration = 50;
+    public float movementLimitSpeed = 10;
+    private float xMovementSpeed;
+
+    [Header("Vertical Movement Settings")]
+    public float jumpForce;
+    private float gravityForce;
+    public float verticalLimitSpeed = 20;
+    private float yMovementSpeed;
+
+    [Header("Collision Settings")]
+    [Header("Ground Collision Settings")]
+    public bool isGrounded;
+    public Transform groundCheckPosition;
+    public float groundCheckRadius;
+    public LayerMask groundMask;
+    [Header("Wall Collision Settings")]
+    public bool wallDetected;
+    public float wallDetectDistance;
+    public float wallDetectHeightPosition;
+    [Header("Fall Detection Settings")]
+    public bool groundCheck;
+    public float fallingStepDistance;
+    public float fallingHeightLimit;
+    [Header("Jump Detection Settings")]
+    public bool canJump;
+    public float jumpDistanceRequired;
+    public float jumpHeightRequired;
+
+    [Header("Input Settings")]
+    public float xAxisInput;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        gravityForce = Physics2D.gravity.y * rb.gravityScale;
+    }
+
+    private void Update()
+    {
+        GetInputs();
+
+        GroundCheck();
+
+        JumpDetection();
+
+        WallDetection();
+        FallDetection();
+
+        HandleEnemyMovement();
+        HandleEnemyAnimations();
+    }
+
+    public void StopEnemyMovement(bool stopEnemyMovement)
+    {
+        stopHorizontalMovement = stopEnemyMovement;
+    }
+
+    public void SetEnemyDirection(Vector3 actualTarget)
+    {
+        xAxisInput = 1 * Mathf.Sign(actualTarget.x - transform.position.x);
+    }
+
+    private void GetInputs()
+    {
+        if(!stopHorizontalMovement)
+        {
+            if (xAxisInput != 0)
+            {
+                sprite.localScale = new Vector3(1 * Mathf.Sign(xAxisInput), 1, 1);
+            }
+        }
+        else
+        {
+            xAxisInput = 0;
+        }
+    }
+
+    private void HandleEnemyAnimations()
+    {
+            animator.SetFloat("xInput", Mathf.Abs(xAxisInput));
+            animator.SetBool("isGrounded", isGrounded);
+    }
+
+    private void HandleEnemyMovement()
+    {
+        HorizontalSpeed();
+
+        VerticalSpeed();
+
+        Vector3 horizontalVelocity = Vector3.right * xMovementSpeed;
+        Vector3 verticalVelocity = Vector3.up * yMovementSpeed;
+
+        Vector3 totalVelocity = horizontalVelocity + verticalVelocity;
+
+        rb.velocity = totalVelocity;
+    }
+
+    private void HorizontalSpeed()
+    {
+        if (Mathf.Abs(xAxisInput) > 0)
+        {
+            xMovementSpeed += xAxisInput * movementAcceleration * Time.deltaTime;
+        }
+        else
+        {
+            xMovementSpeed = Mathf.MoveTowards(xMovementSpeed, 0, movementDeceleration * Time.deltaTime);
+        }
+
+        xMovementSpeed = Mathf.Clamp(xMovementSpeed, -movementLimitSpeed, movementLimitSpeed);
+    }
+
+    private void VerticalSpeed()
+    {
+        HandleGravity();
+        HandleJump();
+    }
+
+    private void HandleGravity()
+    {
+        if (isGrounded && yMovementSpeed < 0.1f)
+        {
+            yMovementSpeed = rb.velocity.y;
+        }
+        else if (!isGrounded)
+        {
+            yMovementSpeed += gravityForce * Time.deltaTime;
+        }
+
+        yMovementSpeed = Mathf.Clamp(yMovementSpeed, -verticalLimitSpeed, verticalLimitSpeed);
+    }
+
+    private void HandleJump()
+    {
+        if (canJump && isGrounded)
+        {
+            yMovementSpeed = jumpForce;
+            animator.SetTrigger("isJumping");
+        }
+    }
+
+    private void GroundCheck()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheckPosition.position, groundCheckRadius, groundMask);
+    }
+    private void WallDetection()
+    {
+        Vector3 rayOrigin = transform.position + Vector3.up * wallDetectHeightPosition;
+        wallDetected = Physics2D.Raycast(rayOrigin, Vector3.right * xAxisInput, wallDetectDistance, groundMask);
+    }
+    private void FallDetection()
+    {
+        Vector3 rayOrigin = transform.position + Vector3.up + Vector3.right * xAxisInput * fallingStepDistance;
+        groundCheck = Physics2D.Raycast(rayOrigin, Vector3.down, fallingHeightLimit, groundMask);
+    }
+
+    private void JumpDetection()
+    {
+        Vector3 centerJumpRayPosition = transform.position + Vector3.up * wallDetectHeightPosition;
+        Vector3 topJumpRayPosition = transform.position + Vector3.up * jumpHeightRequired;
+
+        bool centerJumpDetection = Physics2D.Raycast(centerJumpRayPosition, Vector3.right * xAxisInput, jumpDistanceRequired, groundMask); 
+        bool topJumpDetection = Physics2D.Raycast(topJumpRayPosition, Vector3.right * xAxisInput, jumpDistanceRequired, groundMask);
+
+        if (centerJumpDetection && !topJumpDetection)
+        {
+            canJump = true;
+        }
+        else
+        {
+            canJump = false;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(groundCheckPosition.position, groundCheckRadius);
+
+        Gizmos.color = Color.cyan;
+
+        Gizmos.DrawRay(transform.position + Vector3.up * wallDetectHeightPosition, Vector3.right * xAxisInput * wallDetectDistance);
+
+        Gizmos.DrawRay(transform.position + Vector3.up + Vector3.right * xAxisInput * fallingStepDistance, Vector3.down * fallingHeightLimit);
+
+        Vector3 centerJumpRayPosition = transform.position + Vector3.up * wallDetectHeightPosition;
+        Vector3 topJumpRayPosition = transform.position + Vector3.up * jumpHeightRequired;
+
+        Gizmos.color = Color.yellow;
+
+        Gizmos.DrawRay(centerJumpRayPosition, Vector3.right * xAxisInput * jumpDistanceRequired);
+
+        Gizmos.DrawRay(topJumpRayPosition, Vector3.right * xAxisInput * jumpDistanceRequired);
+    }
+}
