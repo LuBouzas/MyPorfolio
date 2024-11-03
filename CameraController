@@ -1,0 +1,70 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraController : MonoBehaviour
+{
+    [Header("Player Position")]
+    public Transform playerTransform;
+
+    [Header("Camera Settings")]
+    public Vector3 offsetVector;
+    private float initialZOffset;
+
+    public float smoothSpeed = 1;
+
+    [Header("Limit Camera Settings")]
+    public Transform pointMin;
+    public Transform pointMax;
+    [Header("Limit Camera Gizmos")]
+    public bool viewLimitGizmos;
+    public Color gizmosColor;
+
+    void Start()
+    {
+        initialZOffset = offsetVector.z;
+
+        Debug.Log(initialZOffset);
+    }
+
+    void FixedUpdate()
+    {
+        CameraMovement();
+    }
+
+    private void CameraMovement()
+    {
+        Vector3 targetPosition = playerTransform.position + offsetVector;
+
+        Vector3 followPosition = Vector3.Slerp(transform.position, targetPosition, smoothSpeed * Time.fixedDeltaTime);
+
+        transform.position = new Vector3(
+            Mathf.Clamp(followPosition.x, pointMin.position.x , pointMax.position.x),
+            Mathf.Clamp(followPosition.y, pointMin.position.y, pointMax.position.y),
+            followPosition.z);
+    }
+
+    public void SetNewZOffset(float newZPosition)
+    {
+        offsetVector.z = newZPosition;
+    }
+
+    public void ResetZOffset()
+    {
+        offsetVector.z = initialZOffset;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if(viewLimitGizmos)
+        {
+            Vector3 size = pointMax.position - pointMin.position;
+
+            Vector3 center = pointMin.position + size / 2;
+
+            Gizmos.color = gizmosColor;
+
+            Gizmos.DrawCube(center, size);
+        }
+    }
+}
