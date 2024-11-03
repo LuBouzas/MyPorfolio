@@ -1,0 +1,147 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class DoorSystem : MonoBehaviour
+{
+    [Header("Activate Mechanism")]
+    public bool activateDoorSystem = false;
+
+    [Header("Door Object")]
+    public Transform doorObject;
+
+    [Header("Movement Settings")]
+    public float doorSpeed = 1;
+    private bool activateMovement;
+
+    [Header("Wait Settings")]
+    public float waitTime;
+    private float waitTimeCount;
+
+    [Header("Set Point")]
+    public Vector3Int setEndingPoint;
+    private Vector3 startingPoint;
+    private Vector3 endingPoint;
+    private Vector3 target;
+
+    [Header("Light Settings")]
+    public Light[] doorLight;
+    public Material openMaterial;
+    public Material closeMaterial;
+    public MeshRenderer lightRenderer;
+
+    [Header("Sound Settings")]
+    public AudioSource motorSFX;
+
+    protected void Start()
+    {
+        startingPoint = doorObject.position;
+        endingPoint = doorObject.position + setEndingPoint;
+        target = endingPoint;
+    }
+
+    protected void Update()
+    {
+        if (!activateDoorSystem)
+            return;
+
+        PlatformMovement();
+        LightBehaviour();
+    }
+
+    private void PlatformMovement()
+    {   
+        if(!activateMovement)
+        {
+            waitTimeCount += Time.fixedDeltaTime;
+
+            if(waitTimeCount > waitTime)
+            {
+                activateMovement = true;
+                motorSFX.Play();
+
+                target = startingPoint;
+                waitTimeCount= 0;
+            }
+
+            return;
+        }
+
+        float distance = Vector3.Distance(doorObject.position, target);
+
+        if (distance < 0.05f)
+        {
+            activateMovement = false;
+            doorObject.position = target;
+
+            motorSFX.Stop();
+
+            if (target == endingPoint)
+            {
+                target = startingPoint;
+
+            }
+            else if (target == startingPoint)
+            {
+                target = endingPoint;
+            }
+        }
+
+        doorObject.position = Vector3.MoveTowards(doorObject.position, target, doorSpeed * Time.fixedDeltaTime);
+    }
+
+    private void LightBehaviour()
+    {
+        if(activateDoorSystem)
+        {
+            lightRenderer.material = openMaterial;
+            for (int i = 0; i < doorLight.Length; i++)
+            {
+                doorLight[i].color = Color.green;
+            }
+        }
+        else
+        {
+            lightRenderer.material = closeMaterial;
+            for (int i = 0; i < doorLight.Length; i++)
+            {
+                doorLight[i].color = Color.red;
+            }
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!activateMovement && other.tag == "Player")
+        {
+            activateMovement = true;
+            motorSFX.Play();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(doorObject.position, 0.2f);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(doorObject.position + setEndingPoint, 0.2f);
+
+            Gizmos.DrawLine(doorObject.position, doorObject.position + setEndingPoint);
+        }
+        else
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(startingPoint, 0.2f);
+
+            Gizmos.DrawLine(doorObject.position, startingPoint);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(endingPoint, 0.2f);
+
+            Gizmos.DrawLine(doorObject.position, endingPoint);
+        }
+    }
+}
