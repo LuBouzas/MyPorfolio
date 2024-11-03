@@ -1,0 +1,242 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnemyStateController : MonoBehaviour
+{
+    public EnemyMovement movement;
+
+    [Header("Player Detection Settings")]
+    public bool isPlayerDetected;
+    public Transform playerTransform;
+    public LayerMask playerLayer;
+    public float detectionRadius;
+    public float maxSearchTime;
+    private float searchTimeCount;
+
+    public enum States { Idle, Patrol, Chase, Attack }
+    [Header("Enemy States")]
+    public States actualState;
+
+    [Header("Idle Settings")]
+    public float minIdleTime = 2;
+    public float maxIdleTime = 5;
+    private float idleTime;
+    private float idleTimeCount;
+
+    [Header("Patrol Settings")]
+    public float patrolSpeed;
+    public float patrolDistanceUnits;
+    private Vector3 startPosition;
+    private Vector3 patrolPosition;
+
+    [Header("Chase Settings")]
+    public float attackRange = 1.3f;
+
+    [Header("Attack Settings")]
+    public bool isAttacking;
+
+    private Vector3 target;
+
+    private void Start()
+    {
+        SetIdleState();
+
+        startPosition = transform.position;
+        patrolPosition = startPosition + Vector3.right * patrolDistanceUnits;
+        target = patrolPosition;
+    }
+
+    private void Update()
+    {
+        EnemySense();
+        
+        HandleStateController();
+    }
+
+    private void HandleStateController()
+    {
+        if (movement.wallDetected || !movement.groundCheck)
+        {
+            SetIdleState();
+        }
+
+        switch(actualState)
+        {
+            case States.Idle:
+                //Ejecuta código Idle
+                IdleState();
+                break;
+
+            case States.Patrol:
+                //Ejecuta código Patrol
+                PatrolState();
+                break;
+
+            case States.Chase:
+                //Ejecuta código Chase
+                ChaseState();
+                break;
+
+            case States.Attack: 
+                AttackState();
+                break;
+        }
+    }
+
+    private void EnemySense()
+    {
+        bool playerDetected = Physics2D.OverlapCircle(transform.position,  detectionRadius, playerLayer);
+
+        if(playerDetected)
+        {
+            isPlayerDetected = true;
+            searchTimeCount = 0;
+        }
+        else
+        {
+            searchTimeCount += Time.deltaTime;
+
+            if(searchTimeCount > maxSearchTime)
+            {
+                isPlayerDetected = false;
+            }
+        }
+    }
+
+    private void SetIdleState()
+    {
+        movement.StopEnemyMovement(true);
+
+        idleTime = Random.Range(minIdleTime, maxIdleTime);
+
+        actualState = States.Idle;
+    }
+    private void IdleState()
+    {
+        if (isPlayerDetected)
+        {
+            SetChaseState();
+            return;
+        }
+
+        idleTimeCount += Time.deltaTime;
+
+        if (idleTimeCount > idleTime)
+        {
+            idleTimeCount = 0;
+            SetPatrolState();
+        }
+    }
+
+    private void SetPatrolState()
+    {
+        movement.StopEnemyMovement(false);
+
+        if (target == startPosition)
+        {
+            target = patrolPosition;
+        }
+        else
+        {
+            target = startPosition;
+        }
+
+        movement.SetEnemyDirection(target);
+
+        actualState = States.Patrol;
+    }
+    private void PatrolState()
+    {
+        if (isPlayerDetected)
+        {
+            SetChaseState();
+            return;
+        }
+
+        Vector3 enemyXPosition = transform.position;
+        enemyXPosition.y = 0;
+
+        Vector3 targetXPosition = target;
+        targetXPosition.y = 0;
+
+        float distance = Vector3.Distance(enemyXPosition, targetXPosition);
+
+        if(distance < 0.5f)
+        {
+            SetIdleState();
+        }
+    }
+
+    private void SetChaseState()
+    {
+        movement.StopEnemyMovement(false);
+
+        actualState = States.Chase;
+    }
+
+    private void ChaseState()
+    {
+        if (!isPlayerDetected)
+        {
+            SetIdleState();
+            return;
+        }
+
+        Vector3 enemyXPosition = transform.position;
+        enemyXPosition.y = 0;
+
+        Vector3 playerXPosition = playerTransform.position;
+        playerXPosition.y = 0;
+
+        float distance = Vector3.Distance(enemyXPosition, playerXPosition);
+
+        movement.SetEnemyDirection(playerXPosition);
+
+        if (distance < attackRange)
+        {
+            SetAttackState();
+        }
+    }
+
+    private void SetAttackState()
+    {
+        isAttacking = true;
+    }
+
+    private void AttackState()
+    {
+        if (!isAttacking)
+        {
+            SetChaseState();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Vector3 startPos;
+        Vector3 patrolPos;
+
+        if (!Application.isPlaying)
+        {
+            startPos = transform.position;
+            patrolPos = startPos + Vector3.right * patrolDistanceUnits;
+        }
+        else
+        {
+            startPos = startPosition;
+            patrolPos = patrolPosition;
+        }
+
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(startPos, 0.5f);
+
+        Gizmos.DrawLine(startPos, patrolPos);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(patrolPos, 0.5f);
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+    }
+}
