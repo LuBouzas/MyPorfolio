@@ -1,0 +1,77 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class FallingSpikesSystem : MonoBehaviour
+{
+    public bool activateSystem;
+
+    public Transform spikes;
+    private Vector3 startPosition;
+    public float resetPointDistance;
+    private Vector3 resetPoint;
+
+    [Header("Timer Settings")]
+    public float oscilationTime = 2;
+
+    private float timeCount;
+
+    [Header("Movement Settings")]
+    public float fallingSpeed = 10;
+
+    [Header("Oscilation Settings")]
+    public float frequency = 1;
+    public float amplitude = 1;
+
+    private void Start()
+    {
+        startPosition = spikes.position;
+        resetPoint = startPosition + Vector3.down * resetPointDistance;
+    }
+
+    private void Update()
+    {
+        if (activateSystem)
+        {
+
+            if (timeCount <= oscilationTime)
+            {
+                timeCount += Time.deltaTime;
+                OscilationMovement();
+            }
+            else
+            {
+                FallingMovement();
+            }
+        }
+    }
+
+    private void OscilationMovement()
+    {
+        spikes.position = startPosition + Vector3.right * (amplitude * Mathf.Sin(frequency * Time.time));
+    }
+
+    private void FallingMovement()
+    {
+        if (spikes.position.y <= resetPoint.y)
+        {
+            timeCount = 0;
+
+            activateSystem = false;
+
+            spikes.position = startPosition;
+            return; // Cortar el funcionamiento de la función
+        }
+
+        spikes.position += Vector3.down * fallingSpeed * Time.deltaTime;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Player")
+        {
+            activateSystem = true;
+        }
+    }
+}
