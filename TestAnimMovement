@@ -1,0 +1,30 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TestAnimMovement : MonoBehaviour
+{
+    public Animator animator;
+
+    public float xAxisInput;
+    public bool jumpInput;
+
+    private void Update()
+    {
+        GetMovementInputs();
+
+        HandleAnimations();
+    }
+
+    private void GetMovementInputs() 
+    {
+        xAxisInput = Input.GetAxis("Horizontal");
+
+        jumpInput = Input.GetButtonDown("Jump");
+    }
+
+    private void HandleAnimations()
+    {
+        animator.SetFloat("xInput", Mathf.Abs(xAxisInput));
+    }
+}
