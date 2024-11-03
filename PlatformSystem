@@ -1,0 +1,103 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlatformSystem : MonoBehaviour
+{
+    [Header("Activate Mechanism")]
+    public bool activatePlatformSystem = false;
+
+    [Header("Platform Object")]
+    public Transform platformObj;
+
+    [Header("Target Settings")]
+    public Vector3Int setEndingPoint;
+    private Vector3 startingPoint;
+    private Vector3 endingPoint;
+    private Vector3 target;
+
+    [Header("Movement Settings")]
+    public float platformSpeed = 1;
+
+    [Header("Waiting Settings")]
+    public float waitTime;
+    private float waitTimeCount;
+
+    [Header("Sound Settings")]
+    public AudioSource motorSFX;
+
+    protected void Start()
+    {
+        startingPoint = platformObj.position;
+        endingPoint = platformObj.position + setEndingPoint;
+        target = endingPoint;
+    }
+
+    protected void Update()
+    {
+        if (!activatePlatformSystem)
+            return;
+
+        PlatformMovement();
+    }
+
+    private void PlatformMovement()
+    {
+
+        float distance = Vector3.Distance(platformObj.position, target);
+
+        if (distance < 0.05f)
+        {
+            platformObj.position = target;
+
+            motorSFX.Stop();
+            
+            waitTimeCount += Time.fixedDeltaTime;
+
+            if (waitTimeCount > waitTime)
+            {
+                if (target == endingPoint)
+                {
+                    target = startingPoint;
+                }
+                else if (target == startingPoint)
+                {
+                    target = endingPoint;
+                }
+                
+                motorSFX.Play();
+
+                waitTimeCount = 0;
+            }
+        }
+
+        platformObj.position = Vector3.MoveTowards(platformObj.position, target, platformSpeed * Time.fixedDeltaTime);
+
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(platformObj.position, 0.2f);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(platformObj.position + setEndingPoint, 0.2f);
+
+            Gizmos.DrawLine(platformObj.position, platformObj.position + setEndingPoint);
+        }
+        else
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(startingPoint, 0.2f);
+
+            Gizmos.DrawLine(platformObj.position, startingPoint);
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(endingPoint, 0.2f);
+
+            Gizmos.DrawLine(platformObj.position, endingPoint);
+        }
+    }
+}
