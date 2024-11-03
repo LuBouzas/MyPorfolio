@@ -1,0 +1,88 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class FallingPlatformSystem : MonoBehaviour
+{
+    public bool activateSystem;
+
+    public Transform platform;
+    private Vector3 startPosition;
+    public float resetPointDistance;
+    private Vector3 resetPoint;
+
+    [Header("Timer Settings")]
+    public float oscilationTime = 2;
+
+    private float timeCount;
+
+    [Header("Movement Settings")]
+    public float fallingSpeed = 10;
+    
+    [Header("Oscilation Settings")]
+    public float frequency = 1;
+    public float amplitude = 1;
+
+    private void Start()
+    {
+        startPosition = platform.position;
+        resetPoint = startPosition + Vector3.down * resetPointDistance;
+    }
+
+    private void Update()
+    {
+        if (activateSystem)
+        {
+            if (timeCount <= oscilationTime)
+            {
+                timeCount += Time.deltaTime;
+                OscilationMovement();
+            }
+            else
+            {
+                FallingMovement();
+            }
+        }
+    }
+
+    private void OscilationMovement()
+    {
+        platform.position = startPosition + Vector3.right * (amplitude * Mathf.Sin(frequency * Time.time));
+    }
+
+    private void FallingMovement()
+    {
+        if(platform.position.y <= resetPoint.y)
+        {
+            timeCount = 0;
+            
+            activateSystem = false;
+
+            platform.position = startPosition;
+            return; // Cortar el funcionamiento de la función
+        }
+
+        platform.position += Vector3.down * fallingSpeed * Time.deltaTime;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.tag == "Player")
+        {
+           activateSystem = true;
+
+           if (collision.transform.position.y > platform.position.y)
+           {
+                collision.transform.SetParent(platform);
+           }
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.collider.tag == "Player")
+        {
+            collision.transform.SetParent(null);
+        }
+    }
+}
