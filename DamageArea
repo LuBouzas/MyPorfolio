@@ -1,0 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class DamageArea : MonoBehaviour
+{
+    public float areaDamage;
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.tag == "Player" && collision.tag == "Enemy")
+        {
+            PlayerStats player = collision.GetComponent<PlayerStats>(); //GetComponent -> Busca y asigna PlayerStats
+
+            player.DoDamageToPlayer(areaDamage);
+        }
+    }
+}
