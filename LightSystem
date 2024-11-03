@@ -64,7 +64,7 @@ public class LigthSystem : MonoBehaviour
 
         intensityInput = Input.GetAxis("Vertical");
 
-        changeColorInput = Input.GetButtonDown("Jump"); //Configurar Input Manager
+        changeColorInput = Input.GetButtonDown("Jump");
     }
 
     private void SetLightState()
