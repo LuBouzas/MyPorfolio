@@ -1,0 +1,109 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class LigthSystem : MonoBehaviour
+{
+    [Header("Light Settings")]
+    public Light lampLight;
+    private bool lightState;
+    public float intensitySpeed;
+    public float maxIntensity;
+
+    [Header("Light Colors")]
+    public Color colorA;
+    public Color colorB;
+    public Color colorC;
+    private Color colorTarget;
+    public int actualColor;
+
+    [Header("Light Inputs")]
+    private bool lampLightSwitcher;
+    private float intensityInput;
+    private bool changeColorInput;
+
+    private void Start()
+    {
+        lightState = lampLight.enabled;
+        ChangeColor();
+    }
+
+    private void Update()
+    {
+        if (lampLight != null) 
+        {
+            LampBehaviour();
+        }
+    }
+
+    private void LampBehaviour()
+    {
+        GetInputs();
+
+        if (lampLightSwitcher)
+        {
+            SetLightState();
+        }
+
+        if (lightState == true)
+        {
+            IntensityControl();
+
+            if (changeColorInput)
+            {
+                ChangeColor();
+            }
+
+            lampLight.color =Color.Lerp(lampLight.color, colorTarget, Time.deltaTime * 1);
+        }
+    }
+
+    private void GetInputs()
+    {
+        lampLightSwitcher = Input.GetKey(KeyCode.E);
+
+        intensityInput = Input.GetAxis("Vertical");
+
+        changeColorInput = Input.GetButtonDown("Jump"); //Configurar Input Manager
+    }
+
+    private void SetLightState()
+    {
+        lightState = !lightState;
+        lampLight.enabled = lightState;
+    }
+
+    private void IntensityControl()
+    {
+        lampLight.intensity += intensityInput * intensitySpeed * Time.deltaTime;
+
+        if (lampLight.intensity >= maxIntensity)
+        {
+            BreakLight();
+        }
+    }
+
+    private void ChangeColor()
+    {
+        actualColor++;
+        Debug.Log(actualColor % 3);
+
+        if(actualColor % 3 == 0) 
+        {
+            colorTarget = colorA;
+        }
+        else if (actualColor % 3 == 1)
+        {
+            colorTarget = colorB;
+        }
+        else
+        {
+            colorTarget = colorC;
+        }
+    }
+
+    private void BreakLight()
+    {
+        Destroy(lampLight);
+    }
+}
