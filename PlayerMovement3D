@@ -1,0 +1,89 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerMovement3D : MonoBehaviour
+{
+    [Header("Player Settings")]
+    public float playerSpeed;
+    public float gravitySpeed;
+    public Vector3 playerDirection;
+    private bool canMove;
+
+    [Header("Rotation Settings")]
+    public float rotationSpeed;
+
+    [Header("World Settings")]
+    public LayerMask groundLayer;
+    public float groundRayDistance;
+    public float wallRayDistance;
+
+    [Header("Input Settings")]
+    public float xAxisInput, yAxisInput, inputAxisAmount;
+
+    private void Update()
+    {
+        GetPlayerInputs();
+
+        HandleGroundDetection();
+        HandleWallDetection();
+
+        HandlePlayerMovement();
+    }
+
+    private void GetPlayerInputs()
+    {
+        xAxisInput = Input.GetAxisRaw("Horizontal");
+        yAxisInput = Input.GetAxisRaw("Vertical");
+    }
+
+    private void HandlePlayerMovement()
+    {
+        Vector3 xDirection = xAxisInput * Camera.main.transform.right;
+        Vector3 zDirection = yAxisInput * Camera.main.transform.forward;
+
+        playerDirection = xDirection + zDirection;
+        playerDirection.y = 0;
+        playerDirection.Normalize();
+
+        float actualSpeed = playerSpeed;
+        if (canMove)
+        {
+            transform.position += playerDirection * actualSpeed * Time.deltaTime;
+
+            if (playerDirection == Vector3.zero) playerDirection = transform.forward;
+            Quaternion lookDirection = Quaternion.LookRotation(playerDirection);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, lookDirection, rotationSpeed * Time.deltaTime);
+        }
+
+    }
+
+    private void HandleGroundDetection()
+    {
+        RaycastHit hit;
+
+        if(Physics.Raycast(transform.position + Vector3.up, Vector3.down, out hit, groundRayDistance, groundLayer))
+        {
+            transform.position = new Vector3(
+                transform.position.x,
+                hit.point.y,
+                transform.position.z);
+        }
+        else
+        {
+            transform.position += Vector3.down * gravitySpeed * Time.deltaTime;
+        }
+    }
+
+    private void HandleWallDetection()
+    {
+        if (Physics.Raycast(transform.position + Vector3.up, playerDirection, wallRayDistance, groundLayer))
+        {
+            canMove = false;
+        }
+        else
+        {
+            canMove = true;
+        }
+    }
+}
