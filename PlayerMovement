@@ -1,0 +1,163 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public PlayerAttack attack;
+
+    public Animator animator;
+
+    public Rigidbody2D rb;
+    public Transform sprite;
+
+    [Header("Horizontal Movement Settings")]
+    public float movementAcceleration = 40;
+    public float movementDeceleration = 50;
+    public float movementLimitSpeed = 10;
+    private float xMovementSpeed;
+
+    [Header("Vertical Movement Settings")]
+    public float jumpForce = 10;
+    public float longJumpMult = 1.6f;
+    public int jumpCount;
+    public int jumpLimit;
+    private float gravityForce;
+    public float verticalLimitSpeed = 20;
+    private float yMovementSpeed;
+
+    [Header("Collision Settings")]
+    public bool isGrounded;
+    public Transform groundCheckPosition;
+    public float groundCheckRadius;
+    public LayerMask groundMask;
+
+    [Header("Input Settings")]
+    public float xAxisInput;
+    public bool jumpInput;
+    public bool longJumpInput;
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+
+        gravityForce = Physics2D.gravity.y * rb.gravityScale;
+    }
+
+    private void Update()
+    {
+        GetInputs();
+
+        GroundCheck();
+
+        if(attack.isAttacking) 
+        {
+            rb.velocity = Vector3.zero;
+            return;
+        }
+
+        HandlePlayerMovement();
+
+        HandlePlayerAnimations();
+    }
+
+    private void GetInputs()
+    {
+        xAxisInput = Input.GetAxisRaw("Horizontal");
+        if(xAxisInput != 0)
+        {
+            sprite.localScale = new Vector3(1 * Mathf.Sign(xAxisInput), 1, 1);
+        }
+
+        jumpInput = Input.GetButtonDown("Jump");
+        longJumpInput = Input.GetButton("Jump");
+    }
+
+    private void HandlePlayerAnimations()
+    {
+        animator.SetFloat("xInput", Mathf.Abs(xAxisInput));
+    }
+
+    private void HandlePlayerMovement()
+    {
+        HorizontalSpeed();
+
+        VerticalSpeed();
+
+        Vector3 horizontalVelocity = Vector3.right * xMovementSpeed;
+        Vector3 verticalVelocity = Vector3.up * yMovementSpeed;
+
+        Vector3 totalVelocity = horizontalVelocity + verticalVelocity;
+
+        rb.velocity = totalVelocity;
+    }
+
+    private void HorizontalSpeed() 
+    {
+        if (Mathf.Abs(xAxisInput) > 0)
+        {
+            xMovementSpeed += xAxisInput * movementAcceleration * Time.deltaTime;
+        }
+        else
+        {
+            xMovementSpeed = Mathf.MoveTowards(xMovementSpeed, 0, movementDeceleration * Time.deltaTime);
+        }
+
+        xMovementSpeed = Mathf.Clamp(xMovementSpeed, -movementLimitSpeed, movementLimitSpeed);
+    }
+
+    private void VerticalSpeed()
+    {
+        HandleGravity();
+        HandleJump();
+    }
+
+    private void HandleGravity()
+    {
+        if(isGrounded && yMovementSpeed < 0.1f)
+        {
+            yMovementSpeed = rb.velocity.y;
+
+            if(jumpCount != 0)
+            {
+                jumpCount = 0;
+            }
+        }
+        else if(!isGrounded)
+        {
+            if(longJumpInput && yMovementSpeed > 0 && jumpCount <=1)
+            {
+                yMovementSpeed += gravityForce / longJumpMult * Time.deltaTime;
+            }
+            else
+            {
+                yMovementSpeed += gravityForce * Time.deltaTime;
+            }
+        }
+
+        yMovementSpeed = Mathf.Clamp(yMovementSpeed, -verticalLimitSpeed, verticalLimitSpeed);
+    }
+
+    private void HandleJump()
+    {
+        if ((isGrounded || jumpCount < jumpLimit) && jumpInput)
+        {
+            jumpCount++;
+            
+            yMovementSpeed = jumpForce;
+
+            animator.SetTrigger("isJumping");
+        }
+    }
+
+    private void GroundCheck()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheckPosition.position, groundCheckRadius, groundMask);
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(groundCheckPosition.position, groundCheckRadius);
+    }
+}
